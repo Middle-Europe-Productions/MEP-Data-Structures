@@ -1,6 +1,4 @@
-<p align="center">
-  <img width="1280" height="100" src="https://github.com/Middle-Europe-Productions/MEP-Data-Structures/blob/main/readme-data/logo.png">
-</p>
+![Logo](https://github.com/Middle-Europe-Productions/MEP-Data-Structures/blob/main/readme-data/logo.png)
 
 Source code was tested on [`MEP alpha 1.3.2`](https://github.com/Middle-Europe-Productions/MEP)
 ### What is MEP Data Structures?
@@ -20,10 +18,10 @@ Thirdly, to improve my own skills :)
 - Ubuntu 20 ❌
 ### Recent milestones:
  - Graphical interpretation of the rotations and reposition of the tree nodes.
- - 
+
 ![Rotation](https://github.com/Middle-Europe-Productions/MEP-Data-Structures/blob/main/readme-data/rotations.gif)
  - Animations of the colors of the objects across the windows.
- - 
+
 ![Color](https://github.com/Middle-Europe-Productions/MEP-Data-Structures/blob/main/readme-data/colors.gif)
 
 ###### Piotr Skibiński
