@@ -12,7 +12,7 @@ Thirdly, to improve my own skills :)
 - BST Tree ❌
 - List ❌
 - Ring ❌
-### Testes platforms:
+### Platforms:
 - Windows 10, 64bit ✔️
 - macOS Big Surr ❌
 - Ubuntu 20 ❌
