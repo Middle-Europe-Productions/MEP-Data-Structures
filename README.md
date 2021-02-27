@@ -15,7 +15,7 @@ Thirdly, to improve my own skills :)
 ### Platforms:
 - Windows 10, 64bit ✔️
 - macOS Big Surr ❌
-- Ubuntu 20 ❌
+- Ubuntu 20.04 ✔️
 ### Recent milestones:
  - Graphical interpretation of the rotations and reposition of the tree nodes.
 

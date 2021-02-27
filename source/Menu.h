@@ -12,14 +12,21 @@
 
 class Menu : public Modules, public MEP::Window::BaseWindow {
 	//Picked data structure
-	enum Pick : MEP::U_int32 {
-		AVL = 0,
-		BST = 1
+	enum class Pick {
+		AVL,
+		BST
 	};
 	//Individual 'button'
 	struct TextButton {
 		MEP::Button* button;
 		MEP::Text* text;
+		TextButton(): button(nullptr), text(nullptr) {}
+		~TextButton(){
+			if(button)
+				delete button;
+			if(text)
+				delete text;
+		}
 		void changeVisibility();
 		bool isVisible() const;
 	};
@@ -36,8 +43,8 @@ class Menu : public Modules, public MEP::Window::BaseWindow {
 		//Use global color
 		bool globalColor = false;
 		Config(std::function<sf::Vector2f()> m, std::function<sf::Vector2f()> m_t, std::string t, sf::Color c, bool g = false) :
-			method_text(m_t),
 			method(m),
+			method_text(m_t),
 			text(t),
 			color(c),
 			globalColor(g) {}
@@ -45,9 +52,7 @@ class Menu : public Modules, public MEP::Window::BaseWindow {
 	//Base
 	MEP::Window::Template::Application& master;
 	//Currently picked.
-	Pick picked;
-	//Master color
-	MEP::AnimationColor* m_color;
+	Pick picked = Pick::AVL;
 	//Animation for the buttons.
 	MEP::AnimationColor* alpha_color[NUMBER_OF_COLORS];
 	//Coming soon color.
@@ -108,13 +113,13 @@ bool Menu::TextButton::isVisible() const {
 		
 inline void Menu::gen(TextButton* color, MEP::Window::Template::Application& base, int pos, const Config& config) {
 	//Generate a Button & Text
-	color[pos].button = new MEP::Button(24, base.get<MEP::Object>(Res::Menu::Button1, Res::Group::Menu), 35, { 0, 0 }, { 0.5, 0.5 });
+	color[pos].button = new MEP::Button(24, base.get<MEP::Object>(Res::Menu::Button, Res::Group::Menu), 35, { 0, 0 }, { 0.5, 0.5 });
 	color[pos].text = new MEP::Text(config.text, base.get<sf::Font>(1), 35);
 	//The position animation
 	color[pos].button->addMethodPos(config.method);
 	//Color management
 	if (config.globalColor) {
-		color[pos].button->setFollow(*m_color);
+		color[pos].button->setFollow(m_color);
 	}
 	else {
 		//Alpha channel animation
@@ -127,7 +132,7 @@ inline void Menu::gen(TextButton* color, MEP::Window::Template::Application& bas
 		color[pos].button->setFollow(*alpha_color[pos]);
 		color[pos].button->setColor(config.color);
 	}
-	color[pos].text->setFollow(*m_color, MEP::ColorChannel::A);
+	color[pos].text->setFollow(m_color, MEP::ColorChannel::A);
 	color[pos].button->setDrawTag(MEP::DrawTag::Resize_Pos);
 	//Text update
 	color[pos].text->addMethodPos(config.method_text);
@@ -140,9 +145,7 @@ inline void Menu::init(MEP::Window::Template::Application& base, MEP::Window::Te
 	/*
 	* Initialization of a master color.
 	*/
-	m_color = new MEP::AnimationColor({sf::Color::Cyan.r, sf::Color::Cyan.g, sf::Color::Cyan.b, 0 }, sf::Color::Cyan, sf::milliseconds(300), 120, 0, 10,
-		[](double x)->double { return std::pow(x, 4); });
-	m_color->changeTag(MEP::Animation::AdditionalTag::RunAtEntryAndEnd);
+	m_color.changeTag(MEP::Animation::AdditionalTag::RunAtEntryAndEnd);
 	/*
 	* Initalization of a coming soon colors.
 	*/
@@ -153,11 +156,11 @@ inline void Menu::init(MEP::Window::Template::Application& base, MEP::Window::Te
 	* By default the animation direction is Backwards.
 	* That is bacause of the common sense. Frame is 0 so our animation needed to be backwards (size -> 0) to achive that state.
 	*/
-	m_color->setDirection(MEP::Direction::Forward);
+	m_color.setDirection(MEP::Direction::Forward);
 	/*
 	* Setting the follow of all of the Hub elements.
 	*/
-	hub.setFollow(*m_color, MEP::Window::Template::HubElements::All, 
+	hub.setFollow(m_color, MEP::Window::Template::HubElements::All, 
 		MEP::ColorChannel::R | MEP::ColorChannel::G | MEP::ColorChannel::B);
 	/*
 	* Initialization of the top logo.
@@ -170,7 +173,7 @@ inline void Menu::init(MEP::Window::Template::Application& base, MEP::Window::Te
 	*/
 	logo = new MEP::TextureObject(base.get<MEP::Object>(Res::Menu::Logo, Res::Group::Menu),
 		{ 0, 0 });
-	logo->setFollow(*m_color);
+	logo->setFollow(m_color);
 	logo->setFollow(*logo_entrance, MEP::Following::FollowType::Y_Pos);
 	/*
 	* 3. Reposition.
@@ -212,7 +215,7 @@ inline void Menu::init(MEP::Window::Template::Application& base, MEP::Window::Te
 		});
 	for (int i = 0; i < 3; ++i) {
 		inter_a[i]->addDrawTag(MEP::DrawTag::Resize_Pos);
-		inter_a[i]->setFollow(*m_color);
+		inter_a[i]->setFollow(m_color);
 	}
 	/*
 	* 2. Actual generation.
@@ -427,6 +430,7 @@ inline void Menu::pressedEvent(TextButton* _array, int size) {
 }
 
 inline Menu::Menu(unsigned int ID, MEP::Window::Template::Application& base, MEP::Window::Template::Hub& hub) :
+	Modules(base),
 	MEP::Window::BaseWindow(ID),
 	master(base) {
 	init(base, hub);
@@ -494,19 +498,17 @@ void Menu::handleEvent(sf::RenderWindow& Window, sf::Event& event){
 	if (event.type == sf::Event::KeyReleased) {
 		//Escape button disables the menu the menu
 		if (event.key.code == sf::Keyboard::Escape) {
-			if (isGenerated() and !m_color->isActive()) {
+			if (isGenerated() and !m_color.isActive()) {
 				this->changeStatus(MEP::Window::BaseWindow::Status::Exit);
-				m_color->changeEntryColor({
-				m_color->getFrameAsColor().r,
-				m_color->getFrameAsColor().g,
-				m_color->getFrameAsColor().b,
+				m_color.changeEntryColor({
+				m_color.getFrameAsColor().r,
+				m_color.getFrameAsColor().g,
+				m_color.getFrameAsColor().b,
 				0,
 					});
-				m_color->changeExitColor(m_color->getFrameAsColor());
+				m_color.changeExitColor(m_color.getFrameAsColor());
 				if (picked == Pick::AVL) {
-					if (avl_module_v2) {
-						master.getBaseWindow(avl_module_v2->_newestID()).changeStatus(MEP::Window::BaseWindow::Status::Entrance);
-					}
+					master.getBaseWindow(avl_module_v2->_newestID()).changeStatus(MEP::Window::BaseWindow::Status::Entrance);
 				}
 			}
 		}
@@ -514,7 +516,7 @@ void Menu::handleEvent(sf::RenderWindow& Window, sf::Event& event){
 	else if (setUp[0].isVisible() and setUp[0].button->handleEvent(event, pos)) {
 		if (picked == Pick::AVL) {
 			master.getBaseWindow(avl_module_v2->_newestID()).changeStatus(MEP::Window::BaseWindow::Status::NullAction);
-			for (int i = AVL_ID.begin_ID + 1; i <= avl_module_v2->_newestID(); ++i) {
+			for (unsigned int i = AVL_ID.begin_ID + 1; i <= avl_module_v2->_newestID(); ++i) {
 				master.deleteWindow(i);
 			}
 			avl_module_v2->setDispText(avl_module_v2->getText());
@@ -524,26 +526,26 @@ void Menu::handleEvent(sf::RenderWindow& Window, sf::Event& event){
 		}
 	}
 	else if (setUp[1].isVisible() and setUp[1].button->handleEvent(event, pos)) {
-		if (!m_color->isActive()) {
+		if (!m_color.isActive()) {
 			this->changeStatus(MEP::Window::BaseWindow::Status::Exit);
-			m_color->changeEntryColor({
-					m_color->getFrameAsColor().r,
-					m_color->getFrameAsColor().g,
-					m_color->getFrameAsColor().b,
+			m_color.changeEntryColor({
+					m_color.getFrameAsColor().r,
+					m_color.getFrameAsColor().g,
+					m_color.getFrameAsColor().b,
 					0,
 				});
-			m_color->changeExitColor(m_color->getFrameAsColor());
+			m_color.changeExitColor(m_color.getFrameAsColor());
 			master.getBaseWindow(avl_module_v2->_newestID()).changeStatus(MEP::Window::BaseWindow::Status::Entrance);
 		}
 	}
 	else if (draw.isVisible() and draw.button->handleEvent(event, pos)) {
-		if (!m_color->isActive()) {
+		if (!m_color.isActive()) {
 			if (picked == Pick::AVL) {
 				if (!avl_module_v2) {
 					//Chngin the generate tag.
 					genDS();
 					//avl drawing module
-					avl_module_v2 = new TreeController(AVL_ID.begin_ID, master, *m_color);
+					avl_module_v2 = new TreeController(AVL_ID.begin_ID, master, m_color);
 					master.addWindow(avl_module_v2);
 					//Graph is generated.
 					disableDraw = true;
@@ -552,28 +554,30 @@ void Menu::handleEvent(sf::RenderWindow& Window, sf::Event& event){
 				else {
 					master.getBaseWindow(avl_module_v2->_newestID()).changeStatus(MEP::Window::BaseWindow::Status::Main);
 				}
+			} else {
+				std::cout<<"Wrong pick";
 			}
 			//Exiting the menu
-			m_color->changeEntryColor({
-				m_color->getFrameAsColor().r,
-				m_color->getFrameAsColor().g,
-				m_color->getFrameAsColor().b,
+			m_color.changeEntryColor({
+				m_color.getFrameAsColor().r,
+				m_color.getFrameAsColor().g,
+				m_color.getFrameAsColor().b,
 				0,
 				});
-			m_color->changeExitColor(m_color->getFrameAsColor());
+			m_color.changeExitColor(m_color.getFrameAsColor());
 			this->changeStatus(MEP::Window::BaseWindow::Status::Exit);
 		}
 	}
 	else {
 		for (int i = 0; i < NUMBER_OF_COLORS; ++i)
 			if (color[i].button->handleEvent(event, pos)) {
-				if (m_color->reset()) {
+				if (m_color.reset()) {
 					pressedEvent(color, NUMBER_OF_COLORS);
 					color[i].button->forcePress();
 					color[i].button->block();
-					m_color->changeEntryColor(m_color->getFrameAsColor());
-					m_color->changeExitColor(color[i].button->getColor());
-					m_color->run(MEP::Direction::Forward);
+					m_color.changeEntryColor(m_color.getFrameAsColor());
+					m_color.changeExitColor(color[i].button->getColor());
+					m_color.run(MEP::Direction::Forward);
 				}
 			}
 		for (int i = 0; i < NUMBER_OF_DS; ++i)
@@ -581,21 +585,20 @@ void Menu::handleEvent(sf::RenderWindow& Window, sf::Event& event){
 				pressedEvent(DS, 2);
 				DS[i].button->forcePress();
 				DS[i].button->block();
-				picked = (Pick)i;
+				if(i == 1)
+					picked = Pick::AVL;
 			}
 	}
 }
 
 Menu::~Menu() {
-	delete m_color;
-	for (int i = 0; i < NUMBER_OF_COLORS; ++i) {
-		delete color[i].button;
-		delete color[i].text;
-	}
-	delete logo;
-	//delete logo_entranc;
-	for (int i = 0; i < NUMBER_OF_INTER; ++i)
+	for (int i = 0; i < NUMBER_OF_COLORS; ++i)
+		delete alpha_color[i];
+	delete gray;
+	for(int i = 0; i < NUMBER_OF_INTER; ++i)
 		delete inter_a[i];
+	delete logo;
+	delete logo_entrance;
 }
 
 #endif

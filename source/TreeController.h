@@ -136,8 +136,8 @@ TreeController::TreeController(unsigned int ID,
 	MEP::Window::BaseWindow(ID, base.getMepView(), base.getMepView()),
 	master_base(base),
 	entrance(MEP::AnimationPosition(100, 0, sf::milliseconds(300), 120, 0, 10, [](double x) -> double { return std::pow(x, 4); })),
-	textToDisp(text_onScreen, base.get<sf::Font>(1), 40),
 	add_ball(MEP::TextureObject(base.get<MEP::Object>(1, Res::Group::Tree))),
+	textToDisp(text_onScreen, base.get<sf::Font>(1), 40),
 	master_color(color),
 	lines_alpha({0,0,0,0}, {0,0,0,255}, sf::milliseconds(200))
 {
@@ -168,8 +168,8 @@ TreeController::TreeController(const TreeController& x) :
 	MEP::Window::BaseWindow(x.getID() + 1, x.getView(), x.getMasterView()),
 	master_base(x.master_base),
 	entrance(MEP::AnimationPosition(100, 0, sf::milliseconds(300), 120, 0, 10, [](double x) -> double { return std::pow(x, 4); })),
-	textToDisp(text_onScreen, master_base.get<sf::Font>(1), 40),
 	add_ball(MEP::TextureObject(master_base.get<MEP::Object>(1, Res::Group::Tree))),
+	textToDisp(text_onScreen, master_base.get<sf::Font>(1), 40),
 	master_color(x.master_color),
 	lines_alpha({ 0,0,0,0 }, { 0,0,0,255 }, sf::milliseconds(aniation_time), 120, 0, 10, [](double x)->double { return std::pow(x, 4); })
 {
@@ -322,7 +322,7 @@ void TreeController::handleEvent(sf::RenderWindow& Window, sf::Event& event) {
 		}
 	} 
 	else if (event.type == sf::Event::TextEntered) {
-		if (event.text.unicode >= 48 and event.text.unicode <= 57 or event.text.unicode == 45)
+		if ((event.text.unicode >= 48 and event.text.unicode <= 57) or event.text.unicode == 45)
 		{
 			if (text_onScreen.size() <= 3) {
 				text_onScreen += static_cast<char>(event.text.unicode);
