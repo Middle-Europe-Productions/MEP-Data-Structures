@@ -2,11 +2,11 @@
 
 Source code was tested on [`MEP alpha 1.3.2`](https://github.com/Middle-Europe-Productions/MEP)
 ### What is MEP Data Structures?
-MEP Data Structures is a open source application developed with the use of MEP library. The software will be able to visualize the functionality of various data structures.
+MEP Data Structures is an open-source application developed with the use of the MEP library. The software will be able to visualize the functionality of various data structures.
 ### Why do I develop MEP Data Structures?
-Firstly, to provide the best possible graphical representation of data structures to increase their understanding.
-Secondly, to demonstrate the capabilities hidden inside of the MEP library.
-Thirdly, to improve my own skills :)
+Firstly, to provide the best possible graphical representation of data structures to increase their understanding. 
+Secondly, to demonstrate the capabilities hidden inside of the MEP library. 
+Thirdly, to improve my skills :)
 ### Avalible data structures:
 - AVL Tree ✔️
 - BST Tree ❌
