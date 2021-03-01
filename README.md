@@ -23,5 +23,7 @@ Thirdly, to improve my skills :)
  - Animations of the colors of the objects across the windows.
 
 ![Color](https://github.com/Middle-Europe-Productions/MEP-Data-Structures/blob/main/readme-data/colors.gif)
+ - Dragging the tree across the screen.
 
+![Drag](https://github.com/Middle-Europe-Productions/MEP-Data-Structures/blob/main/readme-data/drag.gif)
 ###### Piotr Skibiński
