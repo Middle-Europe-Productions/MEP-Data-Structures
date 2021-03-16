@@ -4,13 +4,17 @@
 
 namespace Res {
 	enum Group: MEP::U_int32 {
-		Tree = (MEP::U_int32)1,
-		Menu = (MEP::U_int32)2
+		Tree = 1,
+		Menu = 2
 	};
 	enum Menu : MEP::U_int32 {
-		Button = (MEP::U_int32)1,
-		Logo = (MEP::U_int32)2,
-		Intersection = (MEP::U_int32)3
+		Button = 1,
+		Logo = 2,
+		Intersection = 3
+	};
+	enum Windows : MEP::U_int32 {
+		AVL = 1,
+		BST = 2
 	};
 }
 

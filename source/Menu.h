@@ -1,58 +1,25 @@
 
 #ifndef MENU_H
 #define MENU_H
-#define NUMBER_OF_COLORS 6
-#define NUMBER_OF_INTER 3
-#define NUMBER_OF_DS 4
-#define NUMBER_OF_SETUP 4
 
-#include<MEP.h>
+#include"MenuAnimations.h"
 #include"ResNames.h"
 #include"Modules.h"
+#include"Data.h"
+#include<MEPGraphics/AnimationManager.h>
 
-class Menu : public Modules, public MEP::Window::BaseWindow {
+class Menu : public MEP::BaseWindow, public Modules, public MenuAnimations {
 	//Picked data structure
-	enum class Pick {
-		AVL,
-		BST
-	};
-	//Individual 'button'
-	struct TextButton {
-		MEP::Button* button;
-		MEP::Text* text;
-		TextButton(): button(nullptr), text(nullptr) {}
-		~TextButton(){
-			if(button)
-				delete button;
-			if(text)
-				delete text;
-		}
-		void changeVisibility();
-		bool isVisible() const;
-	};
-	//Configuration for folding initializatiom method.
-	struct Config {
-		//Method of calculating the position of the button.
-		std::function<sf::Vector2f()> method;
-		//Method of calculating the position of the text on the button.
-		std::function<sf::Vector2f()> method_text;
-		//Text content.
-		std::string text;
-		//Color
-		sf::Color color;
-		//Use global color
-		bool globalColor = false;
-		Config(std::function<sf::Vector2f()> m, std::function<sf::Vector2f()> m_t, std::string t, sf::Color c, bool g = false) :
-			method(m),
-			method_text(m_t),
-			text(t),
-			color(c),
-			globalColor(g) {}
+	enum Pick : MEP::U_int32 {
+		AVL = 1,
+		BST = 1 << 2
 	};
 	//Base
-	MEP::Window::Template::Application& master;
+	MEP::Template::Application& master;
 	//Currently picked.
-	Pick picked = Pick::AVL;
+	MEP::U_int32 picked = Pick::AVL;
+	//Picked events
+	MEP::U_int32 pickedEvents = Pick::AVL;
 	//Animation for the buttons.
 	MEP::AnimationColor* alpha_color[NUMBER_OF_COLORS];
 	//Coming soon color.
@@ -73,45 +40,32 @@ class Menu : public Modules, public MEP::Window::BaseWindow {
 	MEP::TextureObject* logo;
 private:
 	//Initialization of the resources.
-	void init(MEP::Window::Template::Application& base, MEP::Window::Template::Hub& hub);
+	void init(MEP::Template::Application& base, MEP::Template::Hub& hub);
 	//--------------------------------------
 	//Generation of the enu objects 'lines'.
-	void gen(TextButton* color, MEP::Window::Template::Application& base, int pos, const Config& config);
-	void generate(TextButton* color, MEP::Window::Template::Application& base, int start) {}
+	void gen(TextButton* color, MEP::Template::Application& base, int pos, const Config& config);
+	void generate(TextButton* color, MEP::Template::Application& base, int start) {}
 	template<typename First, typename ...Args>
-	void generate(TextButton* color, MEP::Window::Template::Application& base, int start, First&& first, Args&& ...args);
+	void generate(TextButton* color, MEP::Template::Application& base, int start, First&& first, Args&& ...args);
 	template<typename ...Args>
-	void generateLine(TextButton* color, MEP::Window::Template::Application& base, int start, Args&& ... args);
+	void generateLine(TextButton* color, MEP::Template::Application& base, int start, Args&& ... args);
 	//--------------------------------------
 	void pressedEvent(TextButton* _array, int size);
+	//Back and ESC Event
+	void BackESC();
 public:
 	//Constructor
-	Menu(unsigned int ID, MEP::Window::Template::Application& base, MEP::Window::Template::Hub& hub);
+	Menu(unsigned int ID, MEP::Template::Application& base, MEP::Template::Hub& hub);
 	//Ovveride of the update exit method.
-	//Which executes then the Window::Status is Exit
+	//Which executes then the Status is Exit
 	void updateExit(sf::Time& currentTime) override;
 	//Override of the event handling method.
 	void handleEvent(sf::RenderWindow& Window, sf::Event& event) override;
 	//Destructor.
 	~Menu();
 };
-
-void Menu::TextButton::changeVisibility() {
-	if (!isVisible()) {
-		button->removeDrawTag(MEP::DrawTag::Unactive);
-		text->removeDrawTag(MEP::DrawTag::Unactive);
-	}
-	else {
-		button->addDrawTag(MEP::DrawTag::Unactive);
-		text->addDrawTag(MEP::DrawTag::Unactive);
-	}
-}
-
-bool Menu::TextButton::isVisible() const {
-	return !(button->getDrawTag() & MEP::DrawTag::Unactive);
-}
 		
-inline void Menu::gen(TextButton* color, MEP::Window::Template::Application& base, int pos, const Config& config) {
+inline void Menu::gen(TextButton* color, MEP::Template::Application& base, int pos, const Config& config) {
 	//Generate a Button & Text
 	color[pos].button = new MEP::Button(24, base.get<MEP::Object>(Res::Menu::Button, Res::Group::Menu), 35, { 0, 0 }, { 0.5, 0.5 });
 	color[pos].text = new MEP::Text(config.text, base.get<sf::Font>(1), 35);
@@ -126,7 +80,7 @@ inline void Menu::gen(TextButton* color, MEP::Window::Template::Application& bas
 		alpha_color[pos] = new MEP::AnimationColor({ config.color.r, config.color.g, config.color.b, 0 },
 			{ config.color.r, config.color.g, config.color.b, 255 }, sf::milliseconds(300), 120, 0, 10,
 			[](double x)->double { return std::pow(x, 4); });
-		alpha_color[pos]->changeTag(MEP::Animation::AdditionalTag::RunAtEntryAndEnd);
+		alpha_color[pos]->changeTag(MEP::AdditionalTag::RunAtEntryAndEnd);
 		alpha_color[pos]->setDirection(MEP::Direction::Forward);
 		//Setting the following.
 		color[pos].button->setFollow(*alpha_color[pos]);
@@ -141,17 +95,17 @@ inline void Menu::gen(TextButton* color, MEP::Window::Template::Application& bas
 	//End of text update
 }
 
-inline void Menu::init(MEP::Window::Template::Application& base, MEP::Window::Template::Hub& hub) {
+inline void Menu::init(MEP::Template::Application& base, MEP::Template::Hub& hub) {
 	/*
 	* Initialization of a master color.
 	*/
-	m_color.changeTag(MEP::Animation::AdditionalTag::RunAtEntryAndEnd);
+	m_color.changeTag(MEP::AdditionalTag::RunAtEntryAndEnd);
 	/*
 	* Initalization of a coming soon colors.
 	*/
 	gray = new MEP::AnimationColor({ 100, 100, 100, 0 }, { 100, 100, 100, 255 }, sf::milliseconds(300), 120, 0, 10,
 		[](double x)->double { return std::pow(x, 4); });
-	gray->changeTag(MEP::Animation::AdditionalTag::RunAtEntryAndEnd);
+	gray->changeTag(MEP::AdditionalTag::RunAtEntryAndEnd);
 	/*
 	* By default the animation direction is Backwards.
 	* That is bacause of the common sense. Frame is 0 so our animation needed to be backwards (size -> 0) to achive that state.
@@ -160,14 +114,14 @@ inline void Menu::init(MEP::Window::Template::Application& base, MEP::Window::Te
 	/*
 	* Setting the follow of all of the Hub elements.
 	*/
-	hub.setFollow(m_color, MEP::Window::Template::HubElements::All, 
+	hub.setFollow(m_color, MEP::Template::HubElements::All, 
 		MEP::ColorChannel::R | MEP::ColorChannel::G | MEP::ColorChannel::B);
 	/*
 	* Initialization of the top logo.
 	* 1. Animation
 	*/
 	logo_entrance = new MEP::AnimationPosition(-100, 0, sf::milliseconds(300));
-	logo_entrance->changeTag(MEP::Animation::AdditionalTag::RunAtEntryAndEnd);
+	logo_entrance->changeTag(MEP::AdditionalTag::RunAtEntryAndEnd);
 	/*
 	* 2. Texture
 	*/
@@ -388,8 +342,6 @@ inline void Menu::init(MEP::Window::Template::Application& base, MEP::Window::Te
 	/*
 	* Setting the gray buttons.
 	*/
-	DS[1].button->clearFollow();
-	DS[1].button->setFollow(*gray);
 	DS[2].button->clearFollow();
 	DS[2].button->setFollow(*gray);
 	DS[3].button->clearFollow();
@@ -409,16 +361,27 @@ inline void Menu::init(MEP::Window::Template::Application& base, MEP::Window::Te
 	*/
 	DS[0].button->forcePressed();
 	DS[0].button->block();
+	DS[0]._picked = true;
+	DS[1].button->muteFollowGroup(1);
+	/*
+	* Initialziation of the aniamtions
+	*/
+	initMenu(DS);
+	/*
+	* Assigning the U_int32 values to the DS buttons.
+	*/
+	DS[1]._data = Pick::BST;
+	DS[0]._data = Pick::AVL;
 }
 
 template<typename First, typename ...Args>
-inline void Menu::generate(TextButton* color, MEP::Window::Template::Application& base, int start, First&& first, Args&& ...args) {
+inline void Menu::generate(TextButton* color, MEP::Template::Application& base, int start, First&& first, Args&& ...args) {
 	gen(color, base, start, std::forward<First>(first));
 	generate(color, base, start + 1, std::forward<Args>(args) ...);
 }
 
 template<typename ...Args>
-inline void Menu::generateLine(TextButton* color, MEP::Window::Template::Application& base, int start, Args&& ... args) {
+inline void Menu::generateLine(TextButton* color, MEP::Template::Application& base, int start, Args&& ... args) {
 	generate(color, base, start, std::forward<Args>(args)...);
 }
 
@@ -429,10 +392,80 @@ inline void Menu::pressedEvent(TextButton* _array, int size) {
 	}
 }
 
-inline Menu::Menu(unsigned int ID, MEP::Window::Template::Application& base, MEP::Window::Template::Hub& hub) :
+inline void Menu::BackESC()
+{
+	if (picked & Pick::AVL) {
+		if (!avl_module_v2) {
+			//avl drawing module
+			avl_module_v2 = new TreeController(0, master, m_color, false, Res::Windows::AVL);
+			master.addWindow(avl_module_v2, Res::Windows::AVL);
+			if (current_pos == 0)
+				master.latestWindow().changeStatus(MEP::BaseWindow::Status::Entrance);
+			else
+				master.latestWindow().changeStatus(MEP::BaseWindow::Status::LowEntrance);
+		}
+		else {
+			if (current_pos == 0)
+				master.getWindow(master.getWindowGroup(Res::Windows::AVL).rbegin()->first, Res::Windows::AVL).changeStatus(MEP::BaseWindow::Status::Entrance);
+			else
+				master.getWindow(master.getWindowGroup(Res::Windows::AVL).rbegin()->first, Res::Windows::AVL).changeStatus(MEP::BaseWindow::Status::LowEntrance);
+		}
+	}
+	if (picked & Pick::BST) {
+		if (!bst_module_v2) {
+			//avl drawing module
+			bst_module_v2 = new TreeController<BST_Tree<int, Position>>(0, master, m_color, false, Res::Windows::BST);
+			master.addWindow(bst_module_v2, Res::Windows::BST);
+			if (current_pos == 1)
+				master.latestWindow().changeStatus(MEP::BaseWindow::Status::Entrance);
+			else 
+				master.latestWindow().changeStatus(MEP::BaseWindow::Status::LowEntrance);
+		}
+		else {
+			if (current_pos == 1)
+				master.getWindow(master.getWindowGroup(Res::Windows::BST).rbegin()->first, Res::Windows::BST).changeStatus(MEP::BaseWindow::Status::Entrance);
+			else
+				master.getWindow(master.getWindowGroup(Res::Windows::BST).rbegin()->first, Res::Windows::BST).changeStatus(MEP::BaseWindow::Status::LowEntrance);
+		}
+	}
+	if (!(picked & Pick::AVL)) {
+		if (avl_module_v2) {
+			MEP::BaseWindow& x = master.getWindow(master.getWindowGroup(Res::Windows::AVL).rbegin()->first,
+				Res::Windows::AVL);
+			if(x.getStatus() == MEP::BaseWindow::Status::Main)
+				x.changeStatus(MEP::BaseWindow::Status::Exit);
+			else
+				x.changeStatus(MEP::BaseWindow::Status::LowExit);
+		}
+	}
+	if (!(picked & Pick::BST)) {
+		if (bst_module_v2) {
+			MEP::BaseWindow& x = master.getWindow(master.getWindowGroup(Res::Windows::BST).rbegin()->first,
+				Res::Windows::BST);
+			if (x.getStatus() == MEP::BaseWindow::Status::Main)
+				x.changeStatus(MEP::BaseWindow::Status::Exit);
+			else
+				x.changeStatus(MEP::BaseWindow::Status::LowExit);
+		}
+	}
+
+	//Exiting the menu
+	m_color.changeEntryColor({
+		m_color.getFrameAsColor().r,
+		m_color.getFrameAsColor().g,
+		m_color.getFrameAsColor().b,
+		0,
+		});
+	m_color.changeExitColor(m_color.getFrameAsColor());
+	this->changeStatus(MEP::BaseWindow::Status::Exit);
+	debugOutput(std::cout);
+}
+
+inline Menu::Menu(unsigned int ID, MEP::Template::Application& base, MEP::Template::Hub& hub) :
+	MEP::BaseWindow(ID),
 	Modules(base),
-	MEP::Window::BaseWindow(ID),
-	master(base) {
+	MenuAnimations(this),
+	master(base){
 	init(base, hub);
 	newObjects(m_color,
 		alpha_color[0],
@@ -476,21 +509,21 @@ inline Menu::Menu(unsigned int ID, MEP::Window::Template::Application& base, MEP
 }
 void Menu::updateExit(sf::Time& currentTime) {
 	bool isActive = false;
-	for (auto& x : m_objects) {
-		x->exitUpdate(currentTime);
-	}
-	for (auto& x : m_objects) {
-		if (x->isActive())
-			isActive = true;
-	}
+	_execute([&currentTime, &isActive](auto& x) {
+		if (x.isActive()) {
+			x.get()->exitUpdate(currentTime);
+			if (x.get()->isActive())
+				isActive = true;
+		}
+		});
 	if (!isActive) {
-		if (disableDraw) {
+		if (!disableDraw) {
 			setUp[0].changeVisibility();
 			setUp[1].changeVisibility();
 			draw.changeVisibility();
-			disableDraw = false;
+			disableDraw = true;
 		}
-		changeStatus(MEP::Window::BaseWindow::Status::NullAction);
+		changeStatus(MEP::BaseWindow::Status::NullAction);
 	}
 }
 void Menu::handleEvent(sf::RenderWindow& Window, sf::Event& event){
@@ -498,74 +531,119 @@ void Menu::handleEvent(sf::RenderWindow& Window, sf::Event& event){
 	if (event.type == sf::Event::KeyReleased) {
 		//Escape button disables the menu the menu
 		if (event.key.code == sf::Keyboard::Escape) {
-			if (isGenerated() and !m_color.isActive()) {
-				this->changeStatus(MEP::Window::BaseWindow::Status::Exit);
-				m_color.changeEntryColor({
-				m_color.getFrameAsColor().r,
-				m_color.getFrameAsColor().g,
-				m_color.getFrameAsColor().b,
-				0,
-					});
-				m_color.changeExitColor(m_color.getFrameAsColor());
-				if (picked == Pick::AVL) {
-					master.getBaseWindow(avl_module_v2->_newestID()).changeStatus(MEP::Window::BaseWindow::Status::Entrance);
-				}
+			if (!m_color.isActive()) {
+				BackESC();
 			}
 		}
 	}
-	else if (setUp[0].isVisible() and setUp[0].button->handleEvent(event, pos)) {
-		if (picked == Pick::AVL) {
-			master.getBaseWindow(avl_module_v2->_newestID()).changeStatus(MEP::Window::BaseWindow::Status::NullAction);
-			for (unsigned int i = AVL_ID.begin_ID + 1; i <= avl_module_v2->_newestID(); ++i) {
-				master.deleteWindow(i);
+	else if (event.type == sf::Event::MouseButtonPressed)
+	{
+		if (event.mouseButton.button == sf::Mouse::Left)
+		{
+			//Data structures buttons
+			for (int i = 0; i < NUMBER_OF_DS; ++i)
+				if (DS[i].button->mousePress(pos)) {
+				}
+			//-----------------------
+		}
+	}
+	else if (event.type == sf::Event::MouseButtonReleased)
+	{
+		if (event.mouseButton.button == sf::Mouse::Left) {
+			//Data structures buttons
+			for (int i = 0; i < NUMBER_OF_DS; ++i)
+				if (!DS[i].button->isTansparent(pos.x, pos.y)) {
+					if (DS[i].button->isBlocked()) {
+						manager.runGroup(MEP::Direction::Forward, AnimationGroups::ButtonSizeUp);
+						bool _block = false;
+						if (i == 0) {
+							picked ^= Pick::AVL;
+							if (picked == 0) {
+								picked |= Pick::AVL;
+								_block = true;
+							}
+						}
+						if (i == 1) {
+							picked ^= Pick::BST;
+							if (picked == 0) {
+								picked |= Pick::BST;
+								_block = true;
+							}
+						}
+						if (!_block) {
+							DS[i].button->release();
+							DS[i].button->forceReleased();
+							DS[i]._picked = false;	
+							if(i == current_pos)
+								buttonEvents(DS, i, true);
+						}
+					}
+					else {
+						DS[i].button->forcePress();
+						DS[i].button->block();
+						DS[i]._picked = true;
+						buttonEvents(DS, i);
+						if (i == 0) {
+							picked |= Pick::AVL;
+						}
+						if (i == 1) {
+							picked |= Pick::BST;
+						}
+					}
+				}
+			//-----------------------
+		}
+		else if (event.mouseButton.button == sf::Mouse::Right) {
+			for (int i = 0; i < NUMBER_OF_DS; ++i)
+				if (!DS[i].button->isTansparent(pos.x, pos.y)) {
+					if (DS[i].button->isBlocked()) {
+						buttonEvents(DS, i);
+					}
+				}
+		}
+	}
+	else if (event.type == sf::Event::MouseMoved)
+	{
+		//Data structures buttons
+		for (int i = 0; i < NUMBER_OF_DS; ++i)
+			DS[i].button->mouseActivity(pos);
+		//-----------------------
+
+	}
+	if (setUp[0].isVisible() and setUp[0].button->handleEvent(event, pos)) {
+		if (picked & Pick::AVL) {
+			if (avl_module_v2) {
+				if (master.getWindowGroup(Res::Windows::AVL).rbegin()->first != 0) {
+					master.getWindow(master.getWindowGroup(Res::Windows::AVL).rbegin()->first, Res::Windows::AVL).changeStatus(MEP::BaseWindow::Status::NullAction);
+					std::string text = avl_module_v2->getText();
+					master.deleteWindowGroup(Res::Windows::AVL);
+					avl_module_v2 = new TreeController(0, master, m_color, false, Res::Windows::AVL);
+					master.addWindow(avl_module_v2, Res::Windows::AVL);
+					avl_module_v2->changeStatus(MEP::BaseWindow::Status::Main);
+				}
 			}
-			avl_module_v2->setDispText(avl_module_v2->getText());
-			avl_module_v2->_setNewsetID(AVL_ID.begin_ID);
-			avl_module_v2->clear();
-			avl_module_v2->changeStatus(MEP::Window::BaseWindow::Status::InProgress);
+		}
+		if (picked & Pick::BST) {
+			if (bst_module_v2) {
+				if (master.getWindowGroup(Res::Windows::BST).rbegin()->first != 0) {
+					master.getWindow(master.getWindowGroup(Res::Windows::BST).rbegin()->first, Res::Windows::BST).changeStatus(MEP::BaseWindow::Status::NullAction);
+					std::string text = bst_module_v2->getText();
+					master.deleteWindowGroup(Res::Windows::BST);
+					bst_module_v2 = new TreeController<BST_Tree<int, Position>>(0, master, m_color, false, Res::Windows::BST);
+					master.addWindow(bst_module_v2, Res::Windows::BST);
+					bst_module_v2->changeStatus(MEP::BaseWindow::Status::Main);
+				}
+			}
 		}
 	}
 	else if (setUp[1].isVisible() and setUp[1].button->handleEvent(event, pos)) {
 		if (!m_color.isActive()) {
-			this->changeStatus(MEP::Window::BaseWindow::Status::Exit);
-			m_color.changeEntryColor({
-					m_color.getFrameAsColor().r,
-					m_color.getFrameAsColor().g,
-					m_color.getFrameAsColor().b,
-					0,
-				});
-			m_color.changeExitColor(m_color.getFrameAsColor());
-			master.getBaseWindow(avl_module_v2->_newestID()).changeStatus(MEP::Window::BaseWindow::Status::Entrance);
+			BackESC();
 		}
 	}
 	else if (draw.isVisible() and draw.button->handleEvent(event, pos)) {
 		if (!m_color.isActive()) {
-			if (picked == Pick::AVL) {
-				if (!avl_module_v2) {
-					//Chngin the generate tag.
-					genDS();
-					//avl drawing module
-					avl_module_v2 = new TreeController(AVL_ID.begin_ID, master, m_color);
-					master.addWindow(avl_module_v2);
-					//Graph is generated.
-					disableDraw = true;
-					master.latestWindow().changeStatus(MEP::Window::BaseWindow::Status::Entrance);
-				}
-				else {
-					master.getBaseWindow(avl_module_v2->_newestID()).changeStatus(MEP::Window::BaseWindow::Status::Main);
-				}
-			} else {
-				std::cout<<"Wrong pick";
-			}
-			//Exiting the menu
-			m_color.changeEntryColor({
-				m_color.getFrameAsColor().r,
-				m_color.getFrameAsColor().g,
-				m_color.getFrameAsColor().b,
-				0,
-				});
-			m_color.changeExitColor(m_color.getFrameAsColor());
-			this->changeStatus(MEP::Window::BaseWindow::Status::Exit);
+			BackESC();
 		}
 	}
 	else {
@@ -579,14 +657,6 @@ void Menu::handleEvent(sf::RenderWindow& Window, sf::Event& event){
 					m_color.changeExitColor(color[i].button->getColor());
 					m_color.run(MEP::Direction::Forward);
 				}
-			}
-		for (int i = 0; i < NUMBER_OF_DS; ++i)
-			if (DS[i].button->handleEvent(event, pos)) {
-				pressedEvent(DS, 2);
-				DS[i].button->forcePress();
-				DS[i].button->block();
-				if(i == 1)
-					picked = Pick::AVL;
 			}
 	}
 }
